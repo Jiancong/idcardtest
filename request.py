@@ -52,6 +52,12 @@ def show(label, img):
     else:
         pass        
 
+X=0
+Y=0
+drag =False
+global pts 
+arg = 0        
+
 def get_img_scanned(img, pts, img_type):
     _,buffer=cv2.imencode('.jpg', img)
     img_encoded=base64.b64encode(buffer)
@@ -67,11 +73,15 @@ def get_img_scanned(img, pts, img_type):
     
     return final_img
 
-def get_img_pts(img,img_type):
+def get_img_pts(img, img_type):
     _,buffer=cv2.imencode('.jpg',img)
+    
     img_encoded=base64.b64encode(buffer)
-    sttt=(str(img_encoded)[2:])[:-1]
-    my_dict ={'type':img_type,'img':sttt}
+    
+    encoded_img=(str(img_encoded)[2:])[:-1]
+    
+    my_dict ={'type':img_type, 'img':encoded_img}
+    
     resp = requests.post(url=REMOTE_SERVER_URL+'/pts', data=my_dict)
     data = resp.json()
     pts= data['pts']
@@ -144,7 +154,7 @@ if __name__ == "__main__":
                 print(img_front_file.shape)
                 print(img_front_file.dtype)
                 print('img_front_filename:' + str(img_filename))
-                img_front_resized = cv2.resize(img_front_file,(700,500))
+                img_front_resized = cv2.resize(img_front_file,(860,540))
                 
                 print ("----------------------")
                 img_back_filename = os.path.abspath(str(img_filename)).split('_front')[0] + "_back.jpg"
@@ -155,15 +165,18 @@ if __name__ == "__main__":
                 print(img_back_file.dtype)
                 #print('img_back_file:' + str(img_back_filename))
                 
-                img_back_resized = cv2.resize(img_back_file,(700,500))
+                img_back_resized = cv2.resize(img_back_file,(860,540))
 
         
                 cv2.namedWindow("img")
                 cv2.setMouseCallback("img", select_point)
                 
                 ## 先处理front side
-                pts = get_img_pts(img_front_resized,'front')
+                pts = get_img_pts(
+                    img_front_resized,
+                    'front')
                 my_img = img_front_resized.copy()
+                
                 
                 # 进入looping 
                 while True:
@@ -174,7 +187,7 @@ if __name__ == "__main__":
                         pts = np.int32(pts).reshape(-1,2)
                         cv2.polylines(image,[pts],True,(255,0,0),2)
         
-                    print("Show processed image.")
+                    #print("Show processed image.")
                     show('img',image)
                     
                     # 显示1毫秒
@@ -246,7 +259,8 @@ if __name__ == "__main__":
                 show('img_final_water_marked',cv2.resize(img_final_water_marked,(700,800)))
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
-                name= os.path.join('outputs',os.path.basename(img_dir))
+                
+                name= os.path.join('outputs',os.path.basename(img_filename))
                 cv2.imwrite(name,img_final)
                 cv2.imwrite(name.split('.jpg')[0]+'_water.jpg',img_final_water_marked)
         except Exception as e:
