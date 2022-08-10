@@ -59,6 +59,7 @@ global pts
 arg = 0        
 
 def get_img_scanned(img, pts, img_type):
+    print("get_img_scanned called.")
     _,buffer=cv2.imencode('.jpg', img)
     img_encoded=base64.b64encode(buffer)
     sttt=(str(img_encoded)[2:])[:-1]
@@ -74,20 +75,31 @@ def get_img_scanned(img, pts, img_type):
     return final_img
 
 def get_img_pts(img, img_type):
+    print("get_img_pts called.")
     _,buffer=cv2.imencode('.jpg',img)
     
     img_encoded=base64.b64encode(buffer)
     
+    print("image encoded.")
     encoded_img=(str(img_encoded)[2:])[:-1]
-    
+    #print("encoded image shape: {}".format(encoded_img.shape))
+    #print("encoded_img:{}".format(encoded_img))
+
+    print("image type:{}".format(img_type))
     my_dict ={'type':img_type, 'img':encoded_img}
     
     resp = requests.post(url=REMOTE_SERVER_URL+'/pts', data=my_dict)
+    print("get resp")
     data = resp.json()
+    print("data:")
+    if data is None:
+        print("data is none. Error happened.")
+        return
     pts= data['pts']
     return pts
 
 def combine_images(img_1,img_2):
+    print("combine_images called.")
     _,buffer=cv2.imencode('.jpg',img_1)
     img_encoded=base64.b64encode(buffer)
     img_1_st=(str(img_encoded)[2:])[:-1]
@@ -102,6 +114,7 @@ def combine_images(img_1,img_2):
     return img,img_water_marked
 
 def select_point(event, x, y, flags, param):
+    print("select_point called.")
     global X
     global Y
     global drag
@@ -175,6 +188,7 @@ if __name__ == "__main__":
                 pts = get_img_pts(
                     img_front_resized,
                     'front')
+                print("pts:{}".format(pts))
                 my_img = img_front_resized.copy()
                 
                 
@@ -255,13 +269,17 @@ if __name__ == "__main__":
                 img_final,    img_final_water_marked = combine_images(
                                                         output_front,
                                                         output_back)
-                show('img_final',cv2.resize(img_final,(700,800)))
-                show('img_final_water_marked',cv2.resize(img_final_water_marked,(700,800)))
+                #show('img_final',cv2.resize(img_final,(700,800)))
+                #show('img_final_water_marked',cv2.resize(img_final_water_marked,(700,800)))
+                cv2.imshow('front',output_front)
+                cv2.imshow('back',output_back)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
                 
                 name= os.path.join('outputs',os.path.basename(img_filename))
-                cv2.imwrite(name,img_final)
-                cv2.imwrite(name.split('.jpg')[0]+'_water.jpg',img_final_water_marked)
+                #cv2.imwrite(name,img_final)
+                #cv2.imwrite(name.split('.jpg')[0]+'_water.jpg',img_final_water_marked)
+                cv2.imwrite(name,output_front)
+                cv2.imwrite(name.split('.jpg')[0]+'back.jpg',output_back)
         except Exception as e:
             print(str(e))
